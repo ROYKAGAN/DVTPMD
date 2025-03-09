@@ -17,7 +17,7 @@
     <!-- Main Activity -->
     <string name="current_status">סטטוס נוכחי</string>
     <string name="status_ok">תקין</string>
-    <string name="status_change_needle">יש להחליף מחט</string>
+    <string name="status_change_needle">הזרקה בוצעה יש להחליף מחט</string>
     <string name="status_description">מידע ועדכונים על המכשיר שלך</string>
     <string name="connection_status_title">חיבור בלוטות׳</string>
     <string name="connected">מחובר</string>
@@ -41,4 +41,12 @@
     <string name="title_activity_consult">התייעצות</string>
     <string name="title_activity_info">מידע</string>
     <string name="title_activity_profile">פרופיל</string>
+
+
+
+    <!-- Add these to your res/values/strings.xml file -->
+    <string name="status_not_ready">לא מוכן</string>
+    <string name="status_ready">מוכן</string>
+    <string name="status_injection_process">הזרקה בפעולה</string>
+    <string name="start_testing">התחלת בדיקה</string>
 </resources>

@@ -55,8 +55,9 @@ public class HistoryActivity extends AppCompatActivity {
     }
 
     private void loadHistoryData() {
-        // This would be replaced with data from your database
-        List<MeasurementRecord> historyData = getDummyHistoryData();
+        // Use the DatabaseHelper to get real data
+        DatabaseHelper dbHelper = new DatabaseHelper(this);
+        List<MeasurementRecord> historyData = dbHelper.getAllMeasurementRecords();
 
         if (historyData.isEmpty()) {
             recyclerViewHistory.setVisibility(View.GONE);
@@ -69,6 +70,7 @@ public class HistoryActivity extends AppCompatActivity {
             recyclerViewHistory.setAdapter(historyAdapter);
         }
     }
+
 
     // Dummy method to simulate data - replace with actual data from your storage
     private List<MeasurementRecord> getDummyHistoryData() {

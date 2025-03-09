@@ -20,7 +20,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private DrawerLayout drawerLayout;
     private TextView statusTextView;
     private View statusIndicator;
-    private BluetoothManager bluetoothManager;
+    private BluetoothManager bluetoothManager_filterEsp;
+    private BluetoothManager bluetoothManager_needleEsp;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,11 +32,19 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         setupToolbarAndDrawer();
         initializeComponents();
 
+
+
         // Initialize and start Bluetooth connection
-        bluetoothManager = new BluetoothManager(this);
-        bluetoothManager.setOnDataReceivedListener(this::handleReceivedData);
-        bluetoothManager.setOnConnectionStatusChangeListener(this::updateConnectionStatus);
-        bluetoothManager.initialize();
+        bluetoothManager_filterEsp = new BluetoothManager(this);
+        bluetoothManager_filterEsp.setOnDataReceivedListener(this::handleReceivedData_FilterEsp);
+        bluetoothManager_filterEsp.setOnConnectionStatusChangeListener(this::updateConnectionStatus);
+        bluetoothManager_filterEsp.initialize();
+
+        // Start listening for data
+        bluetoothManager_needleEsp = new BluetoothManager(this);
+        bluetoothManager_needleEsp.setOnDataReceivedListener(this::handleReceivedData_NeedleEsp);
+        bluetoothManager_needleEsp.setOnConnectionStatusChangeListener(this::updateConnectionStatus);
+        bluetoothManager_needleEsp.initialize();
     }
 
     private void setupToolbarAndDrawer() {
@@ -61,26 +70,42 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         statusIndicator = findViewById(R.id.status_indicator);
     }
 
-    private void handleReceivedData(String data) {
+    private void handleReceivedData_FilterEsp(String data) {
         // Process data from ESP device
         if (data.contains("NEEDLE_OK")) {
-            updateStatus(true);
+            updateStatus(1);
         } else if (data.contains("NEEDLE_CHANGE")) {
-            updateStatus(false);
+            updateStatus(2);
+        }
+    }
+    private void handleReceivedData_NeedleEsp(String data) {
+        // Process data from ESP device
+        if (data.contains("NEEDLE_ACTION")) {
+            updateStatus(3);
         }
     }
 
-    private void updateStatus(boolean isOk) {
+    private void updateStatus(int mode) {
         runOnUiThread(() -> {
-            if (isOk) {
+            if (mode == 1) {
                 statusTextView.setText(R.string.status_ok);
                 statusIndicator.setBackgroundResource(R.drawable.status_green);
-            } else {
+            } else if(mode == 2) {
                 statusTextView.setText(R.string.status_change_needle);
                 statusIndicator.setBackgroundResource(R.drawable.status_red);
+            } else{
+                statusTextView.setText(R.string.status_injection_process);
+                statusIndicator.setBackgroundResource(R.drawable.status_blue);
+
+                DatabaseHelper dbHelper = new DatabaseHelper(this);
+                long timestamp = System.currentTimeMillis(); // Current time
+                int value = bluetoothManager_needleEsp.getInjectionValue(); // Example measurement value (adjust as needed)
+                String status = bluetoothManager_needleEsp.getInjectionStatus(); // Example status
+                dbHelper.insertMeasurementRecord(timestamp, value, status);
             }
         });
     }
+
 
     private void updateConnectionStatus(boolean isConnected) {
         runOnUiThread(() -> {
@@ -111,7 +136,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         } else if (id == R.id.nav_profile) {
             startActivity(new Intent(this, ProfileActivity.class));
         } else if (id == R.id.nav_bluetooth) {
-            bluetoothManager.showDeviceSelectionDialog();
+            bluetoothManager_filterEsp.showDeviceSelectionDialog();
         }
 
         drawerLayout.closeDrawer(GravityCompat.START);
@@ -130,6 +155,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        bluetoothManager.close();
+        bluetoothManager_filterEsp.close();
     }
 }

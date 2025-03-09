@@ -39,6 +39,9 @@ public class BluetoothManager {
     private static final UUID SPP_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
 
     private final Context context;
+
+    private String latestReceivedData = ""; // 🔹 Fix: Declare this variable
+
     private final BluetoothAdapter bluetoothAdapter;
     private final Handler handler;
     private final ExecutorService executorService;
@@ -259,21 +262,18 @@ public class BluetoothManager {
 
             while (isConnected) {
                 try {
-                    // Check if input stream exists
                     if (inputStream == null) break;
 
-                    // Read incoming bytes
                     bytes = inputStream.read(buffer);
                     if (bytes != -1) {
-                        final String receivedData = new String(buffer, 0, bytes);
+                        latestReceivedData = new String(buffer, 0, bytes).trim(); // 🔹 Store last received data
 
                         // Send to listener
                         if (dataListener != null) {
-                            dataListener.onDataReceived(receivedData);
+                            dataListener.onDataReceived(latestReceivedData);
                         }
 
-                        // Log data
-                        Log.d(TAG, "Received: " + receivedData);
+                        Log.d(TAG, "Received: " + latestReceivedData);
                     }
                 } catch (IOException e) {
                     Log.e(TAG, "Data reception error", e);
@@ -323,5 +323,40 @@ public class BluetoothManager {
 
             return view;
         }
+    }
+
+
+    /**
+     * Extracts the injection value from the latest received data.
+     * Expected format: "INJECTION_VALUE:75"
+     * @return the extracted injection value, or -1 if parsing fails.
+     */
+    public int getInjectionValue() {
+        if (latestReceivedData.contains("INJECTION_VALUE:")) {
+            try {
+                String[] parts = latestReceivedData.split(":");
+                return Integer.parseInt(parts[1].trim()); // Extract numeric value
+            } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
+                Log.e(TAG, "Error parsing injection value", e);
+            }
+        }
+        return -1; // Default if no valid data is found
+    }
+
+    /**
+     * Extracts the injection status from the latest received data.
+     * Expected format: "STATUS:OK" or "STATUS:WARNING"
+     * @return the extracted status as a string (e.g., "OK", "WARNING"), or "UNKNOWN" if parsing fails.
+     */
+    public String getInjectionStatus() {
+        if (latestReceivedData.contains("STATUS:")) {
+            try {
+                String[] parts = latestReceivedData.split(":");
+                return parts[1].trim(); // Extract status
+            } catch (ArrayIndexOutOfBoundsException e) {
+                Log.e(TAG, "Error parsing injection status", e);
+            }
+        }
+        return "UNKNOWN"; // Default if no valid status is found
     }
 }
