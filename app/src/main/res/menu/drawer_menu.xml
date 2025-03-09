@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:showIn="navigation_view">
+
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/nav_main"
+            android:icon="@android:drawable/ic_menu_compass"
+            android:title="@string/menu_main" />
+        <item
+            android:id="@+id/nav_history"
+            android:icon="@android:drawable/ic_menu_recent_history"
+            android:title="@string/menu_history" />
+        <item
+            android:id="@+id/nav_consult"
+            android:icon="@android:drawable/ic_menu_call"
+            android:title="@string/menu_consult" />
+        <item
+            android:id="@+id/nav_info"
+            android:icon="@android:drawable/ic_menu_info_details"
+            android:title="@string/menu_info" />
+        <item
+            android:id="@+id/nav_profile"
+            android:icon="@android:drawable/ic_menu_myplaces"
+            android:title="@string/menu_profile" />
+    </group>
+
+    <item android:title="@string/menu_settings">
+        <menu>
+            <item
+                android:id="@+id/nav_bluetooth"
+                android:icon="@android:drawable/stat_sys_data_bluetooth"
+                android:title="@string/menu_bluetooth" />
+        </menu>
+    </item>
+</menu>

@@ -1,3 +1,44 @@
 <resources>
-    <string name="app_name">My Application</string>
+    <!-- App Information -->
+    <string name="app_name">DVT PMD Project Application</string>
+    <string name="app_description">מעקב אחר מערכת ניטור מחלת פקקת ורידים עמוקים</string>
+
+    <!-- Navigation Menu -->
+    <string name="navigation_drawer_open">פתח תפריט ניווט</string>
+    <string name="navigation_drawer_close">סגור תפריט ניווט</string>
+    <string name="menu_main">ראשי</string>
+    <string name="menu_history">היסטוריה</string>
+    <string name="menu_consult">התייעצות עם רופא</string>
+    <string name="menu_info">מידע</string>
+    <string name="menu_profile">פרופיל אישי</string>
+    <string name="menu_settings">הגדרות</string>
+    <string name="menu_bluetooth">התקנים</string>
+
+    <!-- Main Activity -->
+    <string name="current_status">סטטוס נוכחי</string>
+    <string name="status_ok">תקין</string>
+    <string name="status_change_needle">יש להחליף מחט</string>
+    <string name="status_description">מידע ועדכונים על המכשיר שלך</string>
+    <string name="connection_status_title">חיבור בלוטות׳</string>
+    <string name="connected">מחובר</string>
+    <string name="disconnected">מנותק</string>
+    <string name="status_colon">סטטוס:</string>
+    <string name="connect_device">התחבר למכשיר</string>
+
+    <!-- Bluetooth -->
+    <string name="select_device">בחר התקן</string>
+    <string name="select_device_instruction">בחר את ההתקן אליו תרצה להתחבר:</string>
+    <string name="unknown_device">התקן לא מוכר</string>
+    <string name="enabling_bluetooth">מפעיל בלוטות׳...</string>
+    <string name="bluetooth_not_available">בלוטות׳ לא זמין</string>
+    <string name="connected_to">מחובר אל</string>
+    <string name="connection_failed">החיבור נכשל</string>
+    <string name="send_failed">שליחת הפקודה נכשלה</string>
+    <string name="not_connected">לא מחובר להתקן</string>
+
+    <!-- Placeholder strings for other activities -->
+    <string name="title_activity_history">היסטוריה</string>
+    <string name="title_activity_consult">התייעצות</string>
+    <string name="title_activity_info">מידע</string>
+    <string name="title_activity_profile">פרופיל</string>
 </resources>
