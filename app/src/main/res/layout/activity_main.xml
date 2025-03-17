@@ -14,6 +14,17 @@
         android:layout_height="match_parent"
         android:orientation="vertical">
 
+
+        <Button
+            android:id="@+id/change_needle_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/needle_change_title"
+            android:visibility="gone"
+            android:layout_below="@id/start_test_button"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="16dp"/>
+
         <androidx.appcompat.widget.Toolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
@@ -78,7 +89,6 @@
                             android:text="@string/disconnected"
                             android:textColor="@color/colorDisconnected"
                             android:textSize="16sp" />
-
                     </LinearLayout>
 
                 </LinearLayout>
@@ -108,7 +118,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="16dp"
-                        android:layout_marginEnd="148dp"
+                        android:layout_marginEnd="108dp"
                         android:text="@string/current_status"
                         android:textColor="@color/colorPrimaryText"
                         android:textSize="22sp"
@@ -128,13 +138,15 @@
 
                     <View
                         android:id="@+id/status_indicator"
-                        android:layout_width="72dp"
-                        android:layout_height="72dp"
+                        android:layout_width="109dp"
+                        android:layout_height="100dp"
                         android:background="@drawable/status_green"
                         app:layout_constraintBottom_toBottomOf="parent"
                         app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintHorizontal_bias="0.498"
                         app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintTop_toTopOf="parent" />
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:layout_constraintVertical_bias="0.311" />
 
                     <TextView
                         android:id="@+id/status_text"
@@ -150,32 +162,23 @@
                         app:layout_constraintStart_toStartOf="@id/status_indicator"
                         app:layout_constraintTop_toBottomOf="@id/status_indicator" />
 
-                    <TextView
-                        android:id="@+id/status_description"
+                    <!-- Start Test Button -->
+                    <Button
+                        android:id="@+id/start_test_button"
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:gravity="center"
-                        android:text="@string/status_description"
-                        android:textColor="@color/colorSecondaryText"
-                        android:textSize="16sp"
-                        app:layout_constraintEnd_toEndOf="parent"
+                        android:layout_height="56dp"
+                        android:background="@drawable/button_active"
+                        android:backgroundTint="@color/black"
+                        android:text="@string/start_testing"
+                        android:textColor="@android:color/white"
+                        android:textSize="18sp"
+                        android:fontFamily="sans-serif-medium"
+                        app:layout_constraintTop_toBottomOf="@id/status_text"
                         app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintTop_toBottomOf="@id/status_text" />
+                        app:layout_constraintEnd_toEndOf="parent"
+                        android:layout_marginTop="32dp"
+                        android:layout_marginHorizontal="24dp" />
 
-                    <!-- Add this code after the status_description TextView in the status card's ConstraintLayout -->
-<!--                    <Button-->
-<!--                        android:id="@+id/start_testing_button"-->
-<!--                        android:layout_width="wrap_content"-->
-<!--                        android:layout_height="wrap_content"-->
-<!--                        android:layout_marginTop="16dp"-->
-<!--                        android:padding="12dp"-->
-<!--                        android:text="@string/start_testing"-->
-<!--                        android:backgroundTint="@color/colorPrimary"-->
-<!--                        android:textColor="@android:color/white"-->
-<!--                        app:layout_constraintTop_toBottomOf="@id/status_description"-->
-<!--                        app:layout_constraintStart_toStartOf="parent"-->
-<!--                        app:layout_constraintEnd_toEndOf="parent" />-->
 
                 </androidx.constraintlayout.widget.ConstraintLayout>
             </androidx.cardview.widget.CardView>

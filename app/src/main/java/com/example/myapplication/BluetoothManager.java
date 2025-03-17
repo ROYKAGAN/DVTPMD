@@ -8,7 +8,6 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Handler;
@@ -16,7 +15,6 @@ import android.os.Looper;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.Toast;
@@ -80,7 +78,6 @@ public class BluetoothManager {
     public void initialize() {
         checkBluetoothPermissions();
         enableBluetooth();
-        attemptAutoConnect();
     }
 
     private void checkBluetoothPermissions() {
@@ -103,9 +100,7 @@ public class BluetoothManager {
         if (bluetoothAdapter != null && !bluetoothAdapter.isEnabled()) {
             Toast.makeText(context, R.string.enabling_bluetooth, Toast.LENGTH_SHORT).show();
             bluetoothAdapter.enable();
-            handler.postDelayed(this::attemptAutoConnect, 2000); // Give Bluetooth time to enable
-        } else {
-            attemptAutoConnect();
+            //handler.postDelayed(this::attemptAutoConnect, 2000); // Give Bluetooth time to enable
         }
     }
 
@@ -146,6 +141,7 @@ public class BluetoothManager {
     public void showDeviceSelectionDialog() {
         if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled()) {
             Toast.makeText(context, R.string.bluetooth_not_available, Toast.LENGTH_SHORT).show();
+
             return;
         }
 
@@ -207,13 +203,13 @@ public class BluetoothManager {
                 }
 
                 // Success message on main thread
-                handler.post(() -> {
-                    Toast.makeText(
-                            context,
-                            context.getString(R.string.connected_to) + " " + device.getName(),
-                            Toast.LENGTH_SHORT
-                    ).show();
-                });
+//                handler.post(() -> {
+//                    Toast.makeText(
+//                            context,
+//                            context.getString(R.string.connected_to) + " " + device.getName(),
+//                            Toast.LENGTH_SHORT
+//                    ).show();
+//                });
 
                 // Start listening for data
                 beginListenForData();
@@ -358,5 +354,48 @@ public class BluetoothManager {
             }
         }
         return "UNKNOWN"; // Default if no valid status is found
+    }
+
+    public void inject(DatabaseHelper dbHelper) {
+        if (!isConnected) {
+            Log.e(TAG, "Cannot inject - not connected to device");
+            Toast.makeText(context, R.string.not_connected, Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // First reset the actuator
+        sendCommand("RESET\n");
+
+        // Add a listener for the ESP32 responses
+        OnDataReceivedListener originalListener = dataListener;
+
+        setOnDataReceivedListener(new OnDataReceivedListener() {
+            @Override
+            public void onDataReceived(String data) {
+                if (data.contains("ACTUATOR_RESET_COMPLETE")) {
+                    // Once reset is complete, send the inject command
+                    sendCommand("INJECT\n");
+                }
+                else if (data.contains("INJECTION_COMPLETE")) {
+                    // When injection is complete, get the data and store it
+                    long timestamp = System.currentTimeMillis();
+                    int value = getInjectionValue();
+                    String status = getInjectionStatus();
+
+                    // Store in database
+                    dbHelper.insertMeasurementRecord(timestamp, value, status);
+
+                    // Notify UI on main thread
+                    handler.post(() -> {
+                        Toast.makeText(context,
+                                "Injection complete: " + value + " (" + status + ")",
+                                Toast.LENGTH_SHORT).show();
+                    });
+
+                    // Restore original listener
+                    setOnDataReceivedListener(originalListener);
+                }
+            }
+        });
     }
 }

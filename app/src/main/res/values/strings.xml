@@ -18,9 +18,11 @@
     <string name="current_status">סטטוס נוכחי</string>
     <string name="status_ok">תקין</string>
     <string name="status_change_needle">הזרקה בוצעה יש להחליף מחט</string>
-    <string name="status_description">מידע ועדכונים על המכשיר שלך</string>
-    <string name="connection_status_title">חיבור בלוטות׳</string>
+    <string name="status_description">מידע ועדכונים במערכת</string>
+    <string name="connection_status_title">חיבור בלוטות׳ למערכת</string>
     <string name="connected">מחובר</string>
+    <string name="needle_connected">מחט מחובר</string>
+    <string name="filter_connected">מסנן מחובר</string>
     <string name="disconnected">מנותק</string>
     <string name="status_colon">סטטוס:</string>
     <string name="connect_device">התחבר למכשיר</string>
@@ -42,11 +44,33 @@
     <string name="title_activity_info">מידע</string>
     <string name="title_activity_profile">פרופיל</string>
 
-
-
     <!-- Add these to your res/values/strings.xml file -->
     <string name="status_not_ready">לא מוכן</string>
     <string name="status_ready">מוכן</string>
     <string name="status_injection_process">הזרקה בפעולה</string>
     <string name="start_testing">התחלת בדיקה</string>
+
+    <string name="start_test">התחל בדיקה</string>
+    <string name="test_in_progress">עצור בדיקה</string>
+    <string name="status_waiting">מחכה לנתונים...</string>
+    <string name="status_not_started">לא התחיל</string>
+
+    <!-- New strings for ESP connections and needle change functionality -->
+    <string name="connection_required_title">נדרש חיבור בלוטות׳</string>
+    <string name="connection_required_message">אנא התחבר לשני התקני ESP לפני התחלת הבדיקה</string>
+    <string name="connect_bluetooth">התחבר</string>
+    <string name="cancel">ביטול</string>
+    <string name="needle_change_required_title">נדרשת החלפת מחט</string>
+    <string name="needle_change_required_message">אנא החלף את המחט עכשיו</string>
+    <string name="needle_change_title">האם החלפת מחט?</string>
+    <string name="needle_change_confirmation">האם החלפת את המחט?</string>
+    <string name="yes_changed">כן, הוחלפה</string>
+    <string name="not_yet">עדיין לא</string>
+    <string name="both_connected">שני ההתקנים מחוברים</string>
+    <string name="partial_connected">התקן אחד מחובר</string>
+    <string name="select_esp_device">בחר התקן ESP</string>
+    <string name="filter_esp">ESP מסנן</string>
+    <string name="needle_esp">ESP מחט</string>
+    <string name="ok">אישור</string>
+    <string name="remember_change_needle">זכור להחליף את המחט</string>
 </resources>

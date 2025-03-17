@@ -12,4 +12,5 @@
     <color name="yellow">#FFEB3B</color>
     <color name="red">#F44336</color>
     <color name="black">#FF000000</color>
+    <color name="colorPartialConnected">#FFA500</color> <!-- Orange for partial connection -->
 </resources>
