@@ -1,5 +1,6 @@
 package com.example.myapplication;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
@@ -66,9 +67,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         if (cursor.moveToFirst()) {
             do {
-                long timestamp = cursor.getLong(cursor.getColumnIndex(COLUMN_TIMESTAMP));
-                int value = cursor.getInt(cursor.getColumnIndex(COLUMN_VALUE));
-                String status = cursor.getString(cursor.getColumnIndex(COLUMN_STATUS));
+                @SuppressLint("Range") long timestamp = cursor.getLong(cursor.getColumnIndex(COLUMN_TIMESTAMP));
+                @SuppressLint("Range") int value = cursor.getInt(cursor.getColumnIndex(COLUMN_VALUE));
+                @SuppressLint("Range") String status = cursor.getString(cursor.getColumnIndex(COLUMN_STATUS));
                 historyList.add(new HistoryActivity.MeasurementRecord(new Date(timestamp), value, status));
             } while (cursor.moveToNext());
         }

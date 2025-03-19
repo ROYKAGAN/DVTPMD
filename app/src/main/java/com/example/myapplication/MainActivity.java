@@ -1,7 +1,6 @@
 package com.example.myapplication;
 
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.drawable.AnimationDrawable;
 import android.os.Bundle;
@@ -37,18 +36,18 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     private Context context;
 
-
     private TextView bluetoothStatusTextView;
     private View statusIndicator;
     private Button startTestButton;
     private Button changeNeedleButton;
-
     private boolean needToChangeNeedle = false;
     private BluetoothManager bluetoothManager_filterEsp;
     private BluetoothManager bluetoothManager_needleEsp;
     private boolean isMonitoring = false;
     private boolean isFilterEspConnected = false;
     private boolean isNeedleEspConnected = false;
+
+    private boolean needleChangedAfterAlarm = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,8 +58,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         setupToolbarAndDrawer();
         initializeComponents();
 
-        // Initialize Bluetooth managers - make sure we're maintaining the existing functionality
-        // First BluetoothManager for the filter ESP
+        // Initialize Bluetooth managers
         bluetoothManager_filterEsp = new BluetoothManager(this);
         bluetoothManager_filterEsp.setOnDataReceivedListener(this::handleReceivedData_FilterEsp);
         bluetoothManager_filterEsp.setOnConnectionStatusChangeListener(isConnected -> {
@@ -80,9 +78,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
         // Button click listener to start monitoring
         startTestButton.setOnClickListener(v -> {
-            // Fix: Don't call onStop() here as it was in the original code
             if (!isMonitoring) {
-                if (isFilterEspConnected && isNeedleEspConnected) { // Changed to OR to match original behavior
+                if (isFilterEspConnected && isNeedleEspConnected) {
                     startMonitoring();
                 } else if (!isFilterEspConnected && isNeedleEspConnected) {
                     showESPSelectionDialog_FILTER();
@@ -132,8 +129,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 .setPositiveButton(R.string.yes_changed, (dialog, which) -> {
                     // Reset needle change flag and update status to normal
                     needToChangeNeedle = false;
+                    needleChangedAfterAlarm = true;
                     changeNeedleButton.setVisibility(View.GONE);
-                    //updateStatus(1); // Back to green status
+                    //updateStatus(3);
 
                     // Important: Re-enable the start test button
 //                    startTestButton.setEnabled(true);
@@ -200,7 +198,14 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         if (data.contains("NEEDLE_OK")) {
             updateStatus(1);
         } else if (data.contains("START_INJECT")) {
-            updateStatus(2);
+            if (!needleChangedAfterAlarm) {
+                updateStatus(2);
+            }else{
+                if (!needToChangeNeedle) {
+                    updateStatus(2);
+                }
+            }
+
         }
     }
 
@@ -219,6 +224,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             if (mode == 1) {
                 statusTextView.setText(R.string.status_ok);
                 statusIndicator.setBackgroundResource(R.drawable.status_green);
+                needleChangedAfterAlarm = false;
 
                 // If previously in injection mode, reset injection animation
                 if (statusIndicator.getBackground() instanceof AnimationDrawable) {
@@ -233,10 +239,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     statusTextView.setText(R.string.status_change_needle);
                     statusIndicator.setBackgroundResource(R.drawable.status_red);
                     // Needle needs to be changed, show toast and don't inject
-                    Toast.makeText(this, "יש צורך בביצוע הזרקה עליך להחליף מחט", Toast.LENGTH_SHORT).show();
                     showNeedleChangeReminderNotification();
                     sendNeedleChangeNotification();
                 } else {
+                    needleChangedAfterAlarm = true;
+
                     Toast.makeText(this, "זוהתה חסימה מתחיל הזרקה", Toast.LENGTH_SHORT).show();
                     statusTextView.setText(R.string.status_injection_process);
                     statusIndicator.setBackgroundResource(R.drawable.status_animation);
@@ -248,6 +255,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     bluetoothManager_needleEsp.inject(dbHelper);
                     needToChangeNeedle = true; // Set flag to true after injection
 
+
                     new Handler().postDelayed(() -> {
                         if (isMonitoring) {
 //                            statusTextView.setText(R.string.status_ok);
@@ -258,18 +266,16 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                                 showNeedleChangeReminderNotification();
                             }
                         }
+                        updateStatus(3);
                     }, 5000); // 5 seconds delay - adjust as needed
                 }
 
+
             } else if (mode == 3) {
                 // Needle change required mode
-                statusTextView.setText(R.string.status_change_needle);
+                statusTextView.setText(R.string.status_needle_changed);
                 statusIndicator.setBackgroundResource(R.drawable.status_yellow);
 
-                // Show the change needle button
-                changeNeedleButton.setVisibility(View.VISIBLE);
-
-                // Show a dialog alerting the user
             }
         });
     }

@@ -379,11 +379,9 @@ public class BluetoothManager {
                 else if (data.contains("INJECTION_COMPLETE")) {
                     // When injection is complete, get the data and store it
                     long timestamp = System.currentTimeMillis();
-                    int value = getInjectionValue();
-                    String status = getInjectionStatus();
 
                     // Store in database
-                    dbHelper.insertMeasurementRecord(timestamp, value, status);
+                    dbHelper.insertMeasurementRecord(timestamp, 0, "");
 
                     // Notify UI on main thread
                     handler.post(() -> {

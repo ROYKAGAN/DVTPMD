@@ -18,6 +18,7 @@
     <string name="current_status">סטטוס נוכחי</string>
     <string name="status_ok">תקין</string>
     <string name="status_change_needle">לאחר ביצוע ההזרקה נוצרה חסימה נוספת עליך להחליף מחט </string>
+    <string name="status_needle_changed">מחכה להשפעת ההפרין... </string>
     <string name="status_description">מידע ועדכונים במערכת</string>
     <string name="connection_status_title">חיבור בלוטות׳ למערכת</string>
     <string name="connected">מחובר</string>
@@ -52,7 +53,7 @@
 
     <string name="start_test">התחל בדיקה</string>
     <string name="test_in_progress">עצור בדיקה</string>
-    <string name="status_waiting">מחכה לנתונים...</string>
+    <string name="status_waiting">מאתחל מחכה לנתונים תקינים...</string>
     <string name="status_not_started">לא התחיל</string>
 
     <!-- New strings for ESP connections and needle change functionality -->
