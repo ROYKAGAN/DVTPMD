@@ -17,7 +17,7 @@
     <!-- Main Activity -->
     <string name="current_status">סטטוס נוכחי</string>
     <string name="status_ok">תקין</string>
-    <string name="status_change_needle">הזרקה בוצעה יש להחליף מחט</string>
+    <string name="status_change_needle">לאחר ביצוע ההזרקה נוצרה חסימה נוספת עליך להחליף מחט </string>
     <string name="status_description">מידע ועדכונים במערכת</string>
     <string name="connection_status_title">חיבור בלוטות׳ למערכת</string>
     <string name="connected">מחובר</string>

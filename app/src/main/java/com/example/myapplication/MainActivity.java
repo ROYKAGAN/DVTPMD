@@ -1,5 +1,6 @@
 package com.example.myapplication;
 
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.drawable.AnimationDrawable;
@@ -9,6 +10,15 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
+
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.pm.PackageManager;
+import androidx.core.app.ActivityCompat;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBarDrawerToggle;
@@ -24,6 +34,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     private DrawerLayout drawerLayout;
     private TextView statusTextView;
+
+    private Context context;
+
 
     private TextView bluetoothStatusTextView;
     private View statusIndicator;
@@ -91,6 +104,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     }
 
     private void resetMonitoring() {
+        initializeComponents();
         isMonitoring = false;
         startTestButton.setBackgroundResource(R.drawable.status_gray);
         startTestButton.setText(R.string.start_test);
@@ -119,12 +133,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     // Reset needle change flag and update status to normal
                     needToChangeNeedle = false;
                     changeNeedleButton.setVisibility(View.GONE);
-                    updateStatus(1); // Back to green status
+                    //updateStatus(1); // Back to green status
 
                     // Important: Re-enable the start test button
-                    startTestButton.setEnabled(true);
-                    startTestButton.setBackgroundResource(R.drawable.status_gray);
-                    startTestButton.setText(R.string.start_test);
+//                    startTestButton.setEnabled(true);
+//                    startTestButton.setBackgroundResource(R.drawable.status_gray);
+//                    startTestButton.setText(R.string.start_test);
                 })
                 .setNegativeButton(R.string.not_yet, null)
                 .show();
@@ -136,8 +150,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         // Change button appearance
         startTestButton.setBackgroundResource(R.drawable.button_active);
         startTestButton.setText(R.string.test_in_progress);
-        // Important: Don't disable the button - just change its appearance
-        // startTestButton.setEnabled(false); - removed this line
 
         // Update status to indicate monitoring has started
         statusTextView.setText(R.string.status_waiting);
@@ -197,9 +209,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         if (!isMonitoring) return;
 
         // Process data from Needle ESP device
-        if (data.contains("NEEDLE_CHANGE")) {
-            updateStatus(3); // Needle needs to be changed
-        }
+//        if (data.contains("NEEDLE_CHANGE")) {
+//            updateStatus(3); // Needle needs to be changed
+//        }
     }
 
     private void updateStatus(int mode) {
@@ -215,30 +227,39 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 }
 
             } else if (mode == 2) {
-                statusTextView.setText(R.string.status_injection_process);
-                statusIndicator.setBackgroundResource(R.drawable.status_animation);
-
-                // Start Animation
-                AnimationDrawable animationDrawable = (AnimationDrawable) statusIndicator.getBackground();
-                animationDrawable.start();
 
                 DatabaseHelper dbHelper = new DatabaseHelper(this);
-                bluetoothManager_needleEsp.inject(dbHelper);
-                needToChangeNeedle = true;
+                if(needToChangeNeedle) {
+                    statusTextView.setText(R.string.status_change_needle);
+                    statusIndicator.setBackgroundResource(R.drawable.status_red);
+                    // Needle needs to be changed, show toast and don't inject
+                    Toast.makeText(this, "יש צורך בביצוע הזרקה עליך להחליף מחט", Toast.LENGTH_SHORT).show();
+                    showNeedleChangeReminderNotification();
+                    sendNeedleChangeNotification();
+                } else {
+                    Toast.makeText(this, "זוהתה חסימה מתחיל הזרקה", Toast.LENGTH_SHORT).show();
+                    statusTextView.setText(R.string.status_injection_process);
+                    statusIndicator.setBackgroundResource(R.drawable.status_animation);
 
-                // After injection completes, automatically move to green state
-                // But keep track of needle change requirement
-                new Handler().postDelayed(() -> {
-                    if (isMonitoring) {
-                        statusTextView.setText(R.string.status_ok);
-                        statusIndicator.setBackgroundResource(R.drawable.status_green);
+                    // Start Animation
+                    AnimationDrawable animationDrawable = (AnimationDrawable) statusIndicator.getBackground();
+                    animationDrawable.start();
+                    // Needle doesn't need changing, so perform injection
+                    bluetoothManager_needleEsp.inject(dbHelper);
+                    needToChangeNeedle = true; // Set flag to true after injection
 
-                        // Show needle change reminder notification
-                        if (needToChangeNeedle) {
-                            showNeedleChangeReminderNotification();
+                    new Handler().postDelayed(() -> {
+                        if (isMonitoring) {
+//                            statusTextView.setText(R.string.status_ok);
+//                            statusIndicator.setBackgroundResource(R.drawable.status_green);
+
+                            // Show needle change reminder notification
+                            if (needToChangeNeedle) {
+                                showNeedleChangeReminderNotification();
+                            }
                         }
-                    }
-                }, 5000); // 5 seconds delay - adjust as needed
+                    }, 5000); // 5 seconds delay - adjust as needed
+                }
 
             } else if (mode == 3) {
                 // Needle change required mode
@@ -249,11 +270,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 changeNeedleButton.setVisibility(View.VISIBLE);
 
                 // Show a dialog alerting the user
-                AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                builder.setTitle(R.string.needle_change_required_title)
-                        .setMessage(R.string.needle_change_required_message)
-                        .setPositiveButton(R.string.ok, null)
-                        .show();
             }
         });
     }
@@ -261,6 +277,44 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private void showNeedleChangeReminderNotification() {
         // Show the change needle button
         changeNeedleButton.setVisibility(View.VISIBLE);
+    }
+
+    private void sendNeedleChangeNotification() {
+        // Create notification channel for Android 8.0+
+        String channelId = "needle_channel";
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(
+                    channelId,
+                    "Needle Status",
+                    NotificationManager.IMPORTANCE_HIGH);
+            NotificationManager notificationManager = getSystemService(NotificationManager.class);
+            notificationManager.createNotificationChannel(channel);
+        }
+
+        // Build the notification
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, channelId)
+                .setSmallIcon(R.drawable.ic_notification) // Make sure you have this icon in your drawable resources
+                .setContentTitle("התראת מחט")
+                .setContentText("יש צורך בביצוע הזרקה עליך להחליף מחט")
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setAutoCancel(true);
+
+        // Create intent for when user taps notification
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent,
+                PendingIntent.FLAG_IMMUTABLE);
+        builder.setContentIntent(pendingIntent);
+
+        // Show the notification
+        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
+
+        // You'll need to add permission check for Android 13+
+        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS)
+                == PackageManager.PERMISSION_GRANTED) {
+            notificationManager.notify(1001, builder.build());
+        }
     }
 
     private void updateConnectionStatus() {
@@ -352,6 +406,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 })
                 .show();
     }
+
+
 private void showESPSelectionDialog_FILTER() {
         String[] options = {
                 getString(R.string.filter_esp),

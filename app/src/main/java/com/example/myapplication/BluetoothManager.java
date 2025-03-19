@@ -388,7 +388,7 @@ public class BluetoothManager {
                     // Notify UI on main thread
                     handler.post(() -> {
                         Toast.makeText(context,
-                                "Injection complete: " + value + " (" + status + ")",
+                                "הזרקה הסתיימה ",
                                 Toast.LENGTH_SHORT).show();
                     });
 
