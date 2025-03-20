@@ -381,7 +381,7 @@ public class BluetoothManager {
                     long timestamp = System.currentTimeMillis();
 
                     // Store in database
-                    dbHelper.insertMeasurementRecord(timestamp, 0, "");
+                    dbHelper.insertMeasurementRecord(timestamp, 88, "normal");
 
                     // Notify UI on main thread
                     handler.post(() -> {

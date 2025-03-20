@@ -48,17 +48,18 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private boolean isNeedleEspConnected = false;
 
     private boolean needleChangedAfterAlarm = true;
+    private boolean startingValidMess = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // Initialize UI components
+        // אתחול רכיבי ממשק המשתמש
         setupToolbarAndDrawer();
         initializeComponents();
 
-        // Initialize Bluetooth managers
+        // אתחול מנהלי בלוטות'
         bluetoothManager_filterEsp = new BluetoothManager(this);
         bluetoothManager_filterEsp.setOnDataReceivedListener(this::handleReceivedData_FilterEsp);
         bluetoothManager_filterEsp.setOnConnectionStatusChangeListener(isConnected -> {
@@ -67,7 +68,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         });
         bluetoothManager_filterEsp.initialize();
 
-        // Second BluetoothManager for the needle ESP
+        // מנהל בלוטות' שני עבור ESP המחט
         bluetoothManager_needleEsp = new BluetoothManager(this);
         bluetoothManager_needleEsp.setOnDataReceivedListener(this::handleReceivedData_NeedleEsp);
         bluetoothManager_needleEsp.setOnConnectionStatusChangeListener(isConnected -> {
@@ -76,7 +77,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         });
         bluetoothManager_needleEsp.initialize();
 
-        // Button click listener to start monitoring
+        // הגדרת מאזין לחיצה על כפתור התחלת בדיקה
         startTestButton.setOnClickListener(v -> {
             if (!isMonitoring) {
                 if (isFilterEspConnected && isNeedleEspConnected) {
@@ -89,12 +90,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     showBluetoothConnectionRequiredDialog();
                 }
             } else {
-                // If already monitoring, this allows user to reset/restart the test
+                // אם כבר מנטרים, מאפשר למשתמש לאפס/להפעיל מחדש את הבדיקה
                 resetMonitoring();
             }
         });
 
-        // Change needle button - initially invisible
+        // כפתור החלפת מחט - מוסתר בהתחלה
         changeNeedleButton.setOnClickListener(v -> {
             showNeedleChangeConfirmationDialog();
         });
@@ -115,7 +116,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         builder.setTitle(R.string.connection_required_title)
                 .setMessage(R.string.connection_required_message)
                 .setPositiveButton(R.string.connect_bluetooth, (dialog, which) -> {
-                    // Open Bluetooth connection dialog
+                    // פתיחת דיאלוג חיבור בלוטות'
                     showESPSelectionDialog();
                 })
                 .setNegativeButton(R.string.cancel, null)
@@ -127,16 +128,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         builder.setTitle(R.string.needle_change_title)
                 .setMessage(R.string.needle_change_confirmation)
                 .setPositiveButton(R.string.yes_changed, (dialog, which) -> {
-                    // Reset needle change flag and update status to normal
+                    // איפוס דגל החלפת מחט ועדכון סטטוס לרגיל
                     needToChangeNeedle = false;
                     needleChangedAfterAlarm = true;
                     changeNeedleButton.setVisibility(View.GONE);
-                    //updateStatus(3);
-
-                    // Important: Re-enable the start test button
-//                    startTestButton.setEnabled(true);
-//                    startTestButton.setBackgroundResource(R.drawable.status_gray);
-//                    startTestButton.setText(R.string.start_test);
                 })
                 .setNegativeButton(R.string.not_yet, null)
                 .show();
@@ -145,26 +140,26 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private void startMonitoring() {
         isMonitoring = true;
 
-        // Change button appearance
+        // שינוי מראה הכפתור
         startTestButton.setBackgroundResource(R.drawable.button_active);
         startTestButton.setText(R.string.test_in_progress);
 
-        // Update status to indicate monitoring has started
+        // עדכון סטטוס המציין שהניטור התחיל
         statusTextView.setText(R.string.status_waiting);
         statusIndicator.setBackgroundResource(R.drawable.status_yellow);
     }
 
     private void setupToolbarAndDrawer() {
-        // Setup toolbar
+        // הגדרת סרגל כלים
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        // Setup drawer
+        // הגדרת מגירה
         drawerLayout = findViewById(R.id.drawer_layout);
         NavigationView navigationView = findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
-        // Setup toggle for drawer
+        // הגדרת מתג למגירה
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawerLayout, toolbar,
                 R.string.navigation_drawer_open, R.string.navigation_drawer_close);
@@ -179,54 +174,49 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         startTestButton = findViewById(R.id.start_test_button);
         changeNeedleButton = findViewById(R.id.change_needle_button);
 
-        // Set initial button state
+        // הגדרת מצב התחלתי של הכפתור
         startTestButton.setBackgroundResource(R.drawable.status_gray);
 
-        // Initially hide the change needle button
+        // הסתרת כפתור החלפת מחט בהתחלה
         changeNeedleButton.setVisibility(View.GONE);
 
-        // Clear initial status - leave it blank before test starts
+        // איפוס סטטוס התחלתי - השארתו ריק לפני תחילת הבדיקה
         statusTextView.setText("");
         statusIndicator.setBackgroundResource(R.drawable.status_gray);
     }
 
     private void handleReceivedData_FilterEsp(String data) {
-        // Only process data if monitoring is active
+        // עיבוד נתונים רק אם הניטור פעיל
         if (!isMonitoring) return;
 
-        // Process data from Filter ESP device
+        // עיבוד נתונים מהתקן ESP של הפילטר
         if (data.contains("NEEDLE_OK")) {
             updateStatus(1);
-        } else if (data.contains("START_INJECT")) {
+        } else if (data.contains("START_INJECT") && startingValidMess) {
             if (!needleChangedAfterAlarm) {
                 updateStatus(2);
-            }else{
+            } else {
                 if (!needToChangeNeedle) {
                     updateStatus(2);
                 }
             }
-
         }
     }
 
     private void handleReceivedData_NeedleEsp(String data) {
-        // Only process data if monitoring is active
+        // עיבוד נתונים רק אם הניטור פעיל
         if (!isMonitoring) return;
-
-        // Process data from Needle ESP device
-//        if (data.contains("NEEDLE_CHANGE")) {
-//            updateStatus(3); // Needle needs to be changed
-//        }
     }
 
     private void updateStatus(int mode) {
         runOnUiThread(() -> {
             if (mode == 1) {
+                startingValidMess = true;
                 statusTextView.setText(R.string.status_ok);
                 statusIndicator.setBackgroundResource(R.drawable.status_green);
                 needleChangedAfterAlarm = false;
 
-                // If previously in injection mode, reset injection animation
+                // אם היינו במצב הזרקה קודם לכן, מאפס את אנימציית ההזרקה
                 if (statusIndicator.getBackground() instanceof AnimationDrawable) {
                     AnimationDrawable animationDrawable = (AnimationDrawable) statusIndicator.getBackground();
                     animationDrawable.stop();
@@ -235,10 +225,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             } else if (mode == 2) {
 
                 DatabaseHelper dbHelper = new DatabaseHelper(this);
-                if(needToChangeNeedle) {
+                if (needToChangeNeedle) {
                     statusTextView.setText(R.string.status_change_needle);
                     statusIndicator.setBackgroundResource(R.drawable.status_red);
-                    // Needle needs to be changed, show toast and don't inject
+                    // צריך להחליף מחט, הצגת הודעה ולא להזריק
                     showNeedleChangeReminderNotification();
                     sendNeedleChangeNotification();
                 } else {
@@ -248,45 +238,35 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     statusTextView.setText(R.string.status_injection_process);
                     statusIndicator.setBackgroundResource(R.drawable.status_animation);
 
-                    // Start Animation
+                    // התחלת אנימציה
                     AnimationDrawable animationDrawable = (AnimationDrawable) statusIndicator.getBackground();
                     animationDrawable.start();
-                    // Needle doesn't need changing, so perform injection
+                    // המחט לא צריכה החלפה, לכן מבצע הזרקה
                     bluetoothManager_needleEsp.inject(dbHelper);
-                    needToChangeNeedle = true; // Set flag to true after injection
-
+                    needToChangeNeedle = true; // הגדרת דגל ל-true לאחר הזרקה
 
                     new Handler().postDelayed(() -> {
                         if (isMonitoring) {
-//                            statusTextView.setText(R.string.status_ok);
-//                            statusIndicator.setBackgroundResource(R.drawable.status_green);
-
-                            // Show needle change reminder notification
-                            if (needToChangeNeedle) {
-                                showNeedleChangeReminderNotification();
-                            }
+                            updateStatus(3);
                         }
-                        updateStatus(3);
-                    }, 5000); // 5 seconds delay - adjust as needed
+                    }, 5000); // 5 שניות השהייה - התאם לפי הצורך
                 }
 
-
             } else if (mode == 3) {
-                // Needle change required mode
+                // מצב נדרשת החלפת מחט
                 statusTextView.setText(R.string.status_needle_changed);
                 statusIndicator.setBackgroundResource(R.drawable.status_yellow);
-
             }
         });
     }
 
     private void showNeedleChangeReminderNotification() {
-        // Show the change needle button
+        // הצגת כפתור החלפת מחט
         changeNeedleButton.setVisibility(View.VISIBLE);
     }
 
     private void sendNeedleChangeNotification() {
-        // Create notification channel for Android 8.0+
+        // יצירת ערוץ התראות עבור אנדרואיד 8.0+
         String channelId = "needle_channel";
 
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
@@ -298,25 +278,25 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             notificationManager.createNotificationChannel(channel);
         }
 
-        // Build the notification
+        // בניית ההתראה
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, channelId)
-                .setSmallIcon(R.drawable.ic_notification) // Make sure you have this icon in your drawable resources
+                .setSmallIcon(R.drawable.ic_notification)
                 .setContentTitle("התראת מחט")
                 .setContentText("יש צורך בביצוע הזרקה עליך להחליף מחט")
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setAutoCancel(true);
 
-        // Create intent for when user taps notification
+        // יצירת intent כאשר המשתמש לוחץ על ההתראה
         Intent intent = new Intent(this, MainActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent,
                 PendingIntent.FLAG_IMMUTABLE);
         builder.setContentIntent(pendingIntent);
 
-        // Show the notification
+        // הצגת ההתראה
         NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
 
-        // You'll need to add permission check for Android 13+
+        // בדיקת הרשאות עבור אנדרואיד 13+
         if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS)
                 == PackageManager.PERMISSION_GRANTED) {
             notificationManager.notify(1001, builder.build());
@@ -326,28 +306,31 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private void updateConnectionStatus() {
         runOnUiThread(() -> {
             TextView connectionStatusText = findViewById(R.id.connection_status);
-
+            if (isMonitoring && (!isFilterEspConnected || !isNeedleEspConnected)) {
+                Toast.makeText(this, "ESP נותק הרץ מחדש", Toast.LENGTH_SHORT).show();
+                resetMonitoring();
+            }
             if (isFilterEspConnected && isNeedleEspConnected) {
-                // Both ESPs are connected
+                // שני ESPs מחוברים
                 connectionStatusText.setText(R.string.both_connected);
                 connectionStatusText.setTextColor(getResources().getColor(R.color.colorConnected));
             }
             else if (isNeedleEspConnected) {
-                // Only one ESP is connected - which is still okay based on original logic
+                // רק ESP אחד מחובר - עדיין בסדר לפי הלוגיקה המקורית
                 connectionStatusText.setText(R.string.needle_connected);
                 connectionStatusText.setTextColor(getResources().getColor(R.color.colorPartialConnected));
             }
             else if (isFilterEspConnected) {
-                // Only one ESP is connected - which is still okay based on original logic
+                // רק ESP אחד מחובר - עדיין בסדר לפי הלוגיקה המקורית
                 connectionStatusText.setText(R.string.filter_connected);
                 connectionStatusText.setTextColor(getResources().getColor(R.color.colorPartialConnected));
             }
             else {
-                // Neither ESP is connected
+                // אף ESP לא מחובר
                 connectionStatusText.setText(R.string.disconnected);
                 connectionStatusText.setTextColor(getResources().getColor(R.color.colorDisconnected));
 
-                // Reset monitoring state if connection is lost during monitoring
+                // איפוס מצב ניטור אם החיבור אבד במהלך הניטור
                 if (isMonitoring) {
                     resetMonitoring();
                 }
@@ -357,11 +340,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     @Override
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-        // Handle navigation view item clicks
+        // טיפול בלחיצות פריטי תצוגת ניווט
         int id = item.getItemId();
 
         if (id == R.id.nav_main) {
-            // Already on main, do nothing
+            // כבר במסך הראשי, לא עושה כלום
         } else if (id == R.id.nav_history) {
             startActivity(new Intent(this, HistoryActivity.class));
         } else if (id == R.id.nav_consult) {
@@ -371,7 +354,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         } else if (id == R.id.nav_profile) {
             startActivity(new Intent(this, ProfileActivity.class));
         } else if (id == R.id.nav_bluetooth) {
-            // Show a dialog to select which ESP to connect to
+            // הצגת דיאלוג לבחירת ESP להתחבר אליו
             showESPSelectionDialog();
         }
 
@@ -389,10 +372,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         builder.setTitle(R.string.select_esp_device)
                 .setItems(options, (dialog, which) -> {
                     if (which == 0) {
-                        // Connect to Filter ESP
+                        // התחברות ל-ESP של הפילטר
                         bluetoothManager_filterEsp.showDeviceSelectionDialog();
                     } else {
-                        // Connect to Needle ESP
+                        // התחברות ל-ESP של המחט
                         bluetoothManager_needleEsp.showDeviceSelectionDialog();
                     }
                 })
@@ -407,14 +390,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle(R.string.select_esp_device)
                 .setItems(options, (dialog, which) -> {
-                        bluetoothManager_needleEsp.showDeviceSelectionDialog();
-
+                    bluetoothManager_needleEsp.showDeviceSelectionDialog();
                 })
                 .show();
     }
 
-
-private void showESPSelectionDialog_FILTER() {
+    private void showESPSelectionDialog_FILTER() {
         String[] options = {
                 getString(R.string.filter_esp),
         };
@@ -423,7 +404,6 @@ private void showESPSelectionDialog_FILTER() {
         builder.setTitle(R.string.select_esp_device)
                 .setItems(options, (dialog, which) -> {
                     bluetoothManager_filterEsp.showDeviceSelectionDialog();
-
                 })
                 .show();
     }
@@ -444,7 +424,6 @@ private void showESPSelectionDialog_FILTER() {
         bluetoothManager_needleEsp.close();
     }
 
-    // Reset monitoring when activity is paused
     @Override
     protected void onPause() {
         super.onPause();
