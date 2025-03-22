@@ -50,6 +50,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private boolean needleChangedAfterAlarm = true;
     private boolean startingValidMess = false;
 
+    private boolean changedNeedleAfterRedScreen = false;
+    private boolean waiting_heperin = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -131,6 +134,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     // איפוס דגל החלפת מחט ועדכון סטטוס לרגיל
                     needToChangeNeedle = false;
                     needleChangedAfterAlarm = true;
+                    startingValidMess = false;
+                    changedNeedleAfterRedScreen = true;
+
                     changeNeedleButton.setVisibility(View.GONE);
                 })
                 .setNegativeButton(R.string.not_yet, null)
@@ -138,6 +144,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     }
 
     private void startMonitoring() {
+        startingValidMess = false;
         isMonitoring = true;
 
         // שינוי מראה הכפתור
@@ -192,7 +199,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         // עיבוד נתונים מהתקן ESP של הפילטר
         if (data.contains("NEEDLE_OK")) {
             updateStatus(1);
-        } else if (data.contains("START_INJECT") && startingValidMess) {
+        } else if (data.contains("START_INJECT") && startingValidMess || changedNeedleAfterRedScreen && !waiting_heperin) {
             if (!needleChangedAfterAlarm) {
                 updateStatus(2);
             } else {
@@ -211,6 +218,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private void updateStatus(int mode) {
         runOnUiThread(() -> {
             if (mode == 1) {
+                waiting_heperin = false;
                 startingValidMess = true;
                 statusTextView.setText(R.string.status_ok);
                 statusIndicator.setBackgroundResource(R.drawable.status_green);
@@ -223,17 +231,20 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 }
 
             } else if (mode == 2) {
-
+                waiting_heperin = false;
+                changedNeedleAfterRedScreen = false;
                 DatabaseHelper dbHelper = new DatabaseHelper(this);
                 if (needToChangeNeedle) {
                     statusTextView.setText(R.string.status_change_needle);
                     statusIndicator.setBackgroundResource(R.drawable.status_red);
+
                     // צריך להחליף מחט, הצגת הודעה ולא להזריק
                     showNeedleChangeReminderNotification();
                     sendNeedleChangeNotification();
                 } else {
                     needleChangedAfterAlarm = true;
 
+                    changeNeedleButton.setVisibility(View.VISIBLE);
                     Toast.makeText(this, "זוהתה חסימה מתחיל הזרקה", Toast.LENGTH_SHORT).show();
                     statusTextView.setText(R.string.status_injection_process);
                     statusIndicator.setBackgroundResource(R.drawable.status_animation);
@@ -253,6 +264,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 }
 
             } else if (mode == 3) {
+                waiting_heperin = true;
                 // מצב נדרשת החלפת מחט
                 statusTextView.setText(R.string.status_needle_changed);
                 statusIndicator.setBackgroundResource(R.drawable.status_yellow);
